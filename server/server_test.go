@@ -29,16 +29,27 @@ func TestServer(t *testing.T) {
 
 	})
 	t.Run("/movies returns the correct list of movies", func(t *testing.T) {
+		e := echo.New()
 		db = server.ConnectDB()
+
 		req := httptest.NewRequest(http.MethodGet, "/movies", nil)
 		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 		rec := httptest.NewRecorder()
-		var want models.Movie
-		db.Find(&want)
-		got := rec.Body
+		fmt.Println(rec)
+		c := e.NewContext(req, rec)
+		ListMovies(c)
+		if rec.Code != http.StatusOK {
+			t.Errorf("error connecting to the server")
+		}
+		var wantedMovies models.Movie
+		db.Find(&wantedMovies)
+
+		want := wantedMovies
+		got := rec.Body.String()
+
 		fmt.Println(got)
-		if !reflect.DeepEqual(got, want) {
-			t.Errorf("got: %s want: %+v", got, want)
+		if !reflect.DeepEqual(got, (want)) {
+			t.Errorf("got: %+v want: %+v", got, want)
 		}
 
 	})
