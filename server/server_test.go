@@ -37,7 +37,7 @@ func TestServer(t *testing.T) {
 		rec := httptest.NewRecorder()
 		fmt.Println(rec)
 		c := e.NewContext(req, rec)
-		ListMovies(c)
+		server.ListMovies()
 		if rec.Code != http.StatusOK {
 			t.Errorf("error connecting to the server")
 		}

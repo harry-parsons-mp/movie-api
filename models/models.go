@@ -4,9 +4,9 @@ import "gorm.io/gorm"
 
 type Movie struct {
 	gorm.Model
-	Name        string
-	Description string
-	Genre       string
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Genre       string `json:"genre"`
 	Reviews     []Review
 	Ratings     []Rating
 }
@@ -20,13 +20,19 @@ type User struct {
 }
 
 type Review struct {
+	gorm.Model
 	Title   string
 	Content string
 	UserID  uint
+	User    User `gorm:"foreignkey:UserID"`
 	MovieID uint
+	Movie   Movie
 }
 type Rating struct {
-	score   uint
+	gorm.Model
+	Score   uint
 	UserID  uint
+	User    User `json:"-"`
 	MovieID uint
+	Movie   Movie `json:"-"`
 }
