@@ -51,17 +51,20 @@ func (h *MovieHandler) GetMovieByID(c echo.Context) error {
 func (h *MovieHandler) CreateMovie(c echo.Context) error {
 	var movie models.Movie
 
-	name := c.FormValue("name")
-	if name != "" {
-		movie.Name = name
-	}
-	description := c.FormValue("description")
-	if description != "" {
-		movie.Description = description
-	}
-	genre := c.FormValue("genre")
-	if genre != "" {
-		movie.Genre = genre
+	//name := c.FormValue("name")
+	//if name != "" {
+	//	movie.Name = name
+	//}
+	//description := c.FormValue("description")
+	//if description != "" {
+	//	movie.Description = description
+	//}
+	//genre := c.FormValue("genre")
+	//if genre != "" {
+	//	movie.Genre = genre
+	//}
+	if err := c.Bind(&movie); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 	err := h.Repo.CreateMovie(&movie)
 	if err != nil {

@@ -4,7 +4,7 @@ import "movie-api/server"
 
 func main() {
 	s := server.Server{}
-	s.InitialiseDB()
+	s.InitialiseDB("./database.db")
 	s.InitialiseRoutes()
 
 }

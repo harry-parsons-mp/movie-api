@@ -9,11 +9,12 @@ import (
 	"movie-api/models"
 	"movie-api/repos"
 	"net/http"
+	"os"
 )
 
 type Server struct {
-	db         *gorm.DB
-	e          *echo.Echo
+	Db         *gorm.DB
+	E          *echo.Echo
 	MovieRepo  repos.MovieRepo
 	ReviewRepo repos.ReviewRepo
 }
@@ -26,44 +27,55 @@ func MigrateDB[T any](database *gorm.DB, model T) {
 
 }
 
-func (server *Server) InitialiseDB() {
-	server.e = echo.New()
+func (server *Server) InitialiseDB(path string) {
+	server.E = echo.New()
 
-	db, err := gorm.Open(sqlite.Open("./database.db"), &gorm.Config{})
+	Db, err := gorm.Open(sqlite.Open(path), &gorm.Config{})
 	if err != nil {
-		panic("failed to connect to db")
+		panic("failed to connect to Db")
 	}
-	db.AutoMigrate(&models.Movie{}, &models.Rating{}, &models.Review{}, &models.User{})
-	server.db = db
+	Db.AutoMigrate(&models.Movie{}, &models.Rating{}, &models.Review{}, &models.User{})
+	server.Db = Db
+
+}
+func (server *Server) CloseDB() {
+	db, err := server.Db.DB()
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+	db.Close()
 
 }
 
 func (server *Server) InitialiseRoutes() {
-	server.e.GET("/", func(c echo.Context) error {
+	server.E.GET("/", func(c echo.Context) error {
 		return c.String(http.StatusOK, "hello world")
 	})
 	//Movies
-	server.MovieRepo = repos.NewMovieRepo(server.db)
+	server.MovieRepo = repos.NewMovieRepo(server.Db)
 	movieHandler := handlers.NewMovieHandler(server.MovieRepo)
 
-	server.e.GET("/movies", movieHandler.GetAllMovies)
-	server.e.GET("/movie/:id", movieHandler.GetMovieByID)
-	server.e.POST("/movie", movieHandler.CreateMovie)
-	server.e.PUT("/movie", movieHandler.UpdateMovie)
-	server.e.DELETE("/movie", movieHandler.DeleteMovie)
+	server.E.GET("/movies", movieHandler.GetAllMovies)
+	server.E.GET("/movie/:id", movieHandler.GetMovieByID)
+	server.E.POST("/movie", movieHandler.CreateMovie)
+	server.E.PUT("/movie", movieHandler.UpdateMovie)
+	server.E.DELETE("/movie", movieHandler.DeleteMovie)
 	//// Reviews
-	server.ReviewRepo = repos.NewReviewRepo(server.db)
+	server.ReviewRepo = repos.NewReviewRepo(server.Db)
 	reviewHandler := handlers.NewReviewHandler(server.ReviewRepo)
 
-	server.e.GET("/reviews", reviewHandler.GetAllReviews)
-	server.e.GET("/review/:id", reviewHandler.GetReviewByID)
-	server.e.POST("review", reviewHandler.CreateReview)
-	server.e.PUT("/review", reviewHandler.UpdateReview)
-	server.e.DELETE("/review", reviewHandler.DeleteReview)
+	server.E.GET("/reviews", reviewHandler.GetAllReviews)
+	server.E.GET("/review/:id", reviewHandler.GetReviewByID)
+	server.E.POST("review", reviewHandler.CreateReview)
+	server.E.PUT("/review", reviewHandler.UpdateReview)
+	server.E.DELETE("/review", reviewHandler.DeleteReview)
 
 	//// Users
-	//server.e.GET("/user/:username", Server.GetUser)
-	//server.e.POST("/user", Server.AddUser)
+	//server.E.GET("/user/:username", Server.GetUser)
+	//server.E.POST("/user", Server.AddUser)
 
-	server.e.Logger.Fatal(server.e.Start(":1234"))
+	if os.Getenv("TEST_MODE") == "" {
+		server.E.Logger.Fatal(server.E.Start(":1234"))
+	}
 }
