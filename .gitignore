@@ -1,2 +1,3 @@
 .idea
-
+database.db
+/tests/test-database.db
