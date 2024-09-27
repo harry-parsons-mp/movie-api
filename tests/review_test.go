@@ -3,6 +3,7 @@ package tests
 import (
 	"fmt"
 	"movie-api/models"
+	"movie-api/server/requests"
 	"net/http"
 	"testing"
 )
@@ -16,7 +17,13 @@ func TestReviewCreate(t *testing.T) {
 	}
 	newReview := models.Review{}
 	ReviewFactory(&newReview, 1, 1)
-
+	reviewRequest := requests.ReviewRequest{
+		Title:   newReview.Title,
+		Content: newReview.Content,
+		Score:   newReview.Score,
+		UserID:  newReview.UserID,
+		MovieID: newReview.MovieID,
+	}
 	// testing review factory without movieID or userID
 	factorytest := models.Review{}
 	ReviewFactory(&factorytest, 0, 0)
@@ -25,7 +32,7 @@ func TestReviewCreate(t *testing.T) {
 		{
 			TestName:    "Can create a new review",
 			Request:     request,
-			RequestBody: newReview,
+			RequestBody: reviewRequest,
 			Expected: ExpectedResponse{
 				StatusCode: 201,
 				BodyParts: []string{
@@ -91,7 +98,9 @@ func TestReviewGet(t *testing.T) {
 	review := models.Review{}
 	ReviewFactory(&review, 1, 1)
 	ts.S.Db.Create(&review)
+
 	reviewID := review.ID
+
 	request := Request{
 		Method: http.MethodGet,
 		Url:    "/reviews",
@@ -100,7 +109,6 @@ func TestReviewGet(t *testing.T) {
 		{
 			TestName: "Can list reviews",
 			Request:  request,
-
 			Expected: ExpectedResponse{
 				StatusCode: http.StatusOK,
 				BodyParts: []string{
@@ -155,7 +163,10 @@ func TestReviewUpdate(t *testing.T) {
 	//add a review to update
 	review := models.Review{}
 	ReviewFactory(&review, 1, 1)
+	// creating a new request
+
 	ts.S.Db.Create(&review)
+
 	reviewID := review.ID
 	request := Request{
 		Method: http.MethodPut,
@@ -168,11 +179,19 @@ func TestReviewUpdate(t *testing.T) {
 		UserID:  2,
 		MovieID: 2,
 	}
+	// creating a new request
+	UpdatedReviewReq := requests.ReviewRequest{
+		Title:   updatedReview.Title,
+		Content: updatedReview.Content,
+		Score:   updatedReview.Score,
+		UserID:  updatedReview.UserID,
+		MovieID: updatedReview.MovieID,
+	}
 	tests := []TestCase{
 		{
 			TestName:    "Can update review",
 			Request:     request,
-			RequestBody: updatedReview,
+			RequestBody: UpdatedReviewReq,
 			Expected: ExpectedResponse{
 				StatusCode: http.StatusOK,
 				BodyParts: []string{

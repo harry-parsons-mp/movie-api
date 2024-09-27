@@ -29,6 +29,7 @@ func (h *UserHandler) List(c echo.Context) error {
 func (h *UserHandler) Get(c echo.Context) error {
 	var user models.User
 	id := c.Param("id")
+
 	h.server.Repos.User.Get(id, &user)
 	if user.ID == 0 {
 		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("Failed to retrieve user id: %v", id))
@@ -39,7 +40,8 @@ func (h *UserHandler) Get(c echo.Context) error {
 }
 
 func (h *UserHandler) Create(c echo.Context) error {
-	var req requests.CreateUserRequest
+	var req requests.UserRequest
+
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
@@ -64,7 +66,7 @@ func (h *UserHandler) Create(c echo.Context) error {
 func (h *UserHandler) Update(c echo.Context) error {
 	ID := c.Param("id")
 
-	var updateRequest requests.UpdateUserRequest
+	var updateRequest requests.UserRequest
 	if err := c.Bind(&updateRequest); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}

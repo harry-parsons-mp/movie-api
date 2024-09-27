@@ -1,6 +1,6 @@
 package requests
 
-type CreateReviewRequest struct {
+type ReviewRequest struct {
 	ID      uint   `json:"id"`
 	Title   string `json:"title"`
 	Content string `json:"content"`
@@ -9,11 +9,11 @@ type CreateReviewRequest struct {
 	MovieID uint   `json:"movieID"`
 }
 
-type UpdateReviewRequest struct {
-	ID      uint   `json:"id"`
-	Title   string `json:"title"`
-	Content string `json:"content"`
-	Score   uint   `json:"score"`
-	UserID  uint   `json:"userID"`
-	MovieID uint   `json:"movieID"`
-}
+//type UpdateReviewRequest struct {
+//	ID      uint   `json:"id"`
+//	Title   string `json:"title"`
+//	Content string `json:"content"`
+//	Score   uint   `json:"score"`
+//	UserID  uint   `json:"userID"`
+//	MovieID uint   `json:"movieID"`
+//}

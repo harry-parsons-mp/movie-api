@@ -3,6 +3,7 @@ package tests
 import (
 	"fmt"
 	"movie-api/models"
+	"movie-api/server/requests"
 	"net/http"
 	"testing"
 )
@@ -15,11 +16,15 @@ func TestUserCreate(t *testing.T) {
 	}
 	newUser := models.User{}
 	UserFactory(&newUser)
+	newUserReq := requests.UserRequest{
+		Name:     newUser.Name,
+		Username: newUser.Username,
+	}
 	tests := []TestCase{
 		{
 			TestName:    "Can create user",
 			Request:     request,
-			RequestBody: newUser,
+			RequestBody: newUserReq,
 			Expected: ExpectedResponse{
 				StatusCode: http.StatusCreated,
 				BodyParts: []string{
@@ -68,6 +73,7 @@ func TestUserGet(t *testing.T) {
 
 	user := models.User{}
 	UserFactory(&user)
+
 	ts.S.Db.Create(&user)
 
 	ReviewFactory(&review, 0, user.ID)
@@ -117,6 +123,7 @@ func TestUserUpdate(t *testing.T) {
 	// add a user to be updated
 	user := models.User{}
 	UserFactory(&user)
+
 	ts.S.Db.Create(&user)
 	id := user.ID
 
@@ -128,11 +135,15 @@ func TestUserUpdate(t *testing.T) {
 		Name:     "Updated name",
 		Username: "Updated username",
 	}
+	updatedUserReq := requests.UserRequest{
+		Name:     updatedUser.Name,
+		Username: updatedUser.Username,
+	}
 	tests := []TestCase{
 		{
 			TestName:    "Can update user",
 			Request:     request,
-			RequestBody: updatedUser,
+			RequestBody: updatedUserReq,
 			Expected: ExpectedResponse{
 				StatusCode: http.StatusOK,
 				BodyParts: []string{

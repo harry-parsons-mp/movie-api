@@ -32,17 +32,20 @@ func (h *MovieHandler) List(c echo.Context) error {
 func (h *MovieHandler) Get(c echo.Context) error {
 	id := c.Param("id")
 	movie := &models.Movie{}
+
 	h.server.Repos.Movie.Get(id, movie)
 	if movie.ID == 0 {
 		return c.JSON(http.StatusNotFound, fmt.Sprintf("Failed to retreive movie of id = %v", id))
 	}
+
 	res := responses.NewMovieResponse(movie)
 	return c.JSON(http.StatusOK, res)
 
 }
 
 func (h *MovieHandler) Create(c echo.Context) error {
-	var req requests.CreateMovieRequest
+	var req requests.MovieRequest
+
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
@@ -60,15 +63,16 @@ func (h *MovieHandler) Create(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, "failed to add movie")
 	}
-	// create response
 
+	// response
 	res := responses.NewMovieResponse(mov)
 	return c.JSON(http.StatusCreated, res)
 }
 
 func (h *MovieHandler) Update(c echo.Context) error {
 	ID := c.Param("id")
-	var updateRequest requests.UpdateMovieRequest
+	var updateRequest requests.MovieRequest
+
 	if err := c.Bind(&updateRequest); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
@@ -81,9 +85,11 @@ func (h *MovieHandler) Update(c echo.Context) error {
 	}
 
 	// Update the movie
+
 	mov.Name = updateRequest.Name
 	mov.Description = updateRequest.Description
 	mov.Genre = updateRequest.Genre
+
 	err := h.server.Repos.Movie.Update(mov)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("failed to update movie, %v", err))
@@ -97,6 +103,7 @@ func (h *MovieHandler) Update(c echo.Context) error {
 func (h *MovieHandler) Delete(c echo.Context) error {
 	ID := c.Param("id")
 	var toDelete models.Movie
+
 	// check if movie exists
 	h.server.Repos.Movie.Get(ID, &toDelete)
 	if toDelete.ID == 0 {

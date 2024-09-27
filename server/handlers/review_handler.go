@@ -29,6 +29,7 @@ func (h *ReviewHandler) List(c echo.Context) error {
 func (h *ReviewHandler) GetByID(c echo.Context) error {
 	id := c.Param("id")
 	review := &models.Review{}
+
 	h.server.Repos.Review.Get(id, review)
 	if review.ID == 0 {
 		return c.JSON(http.StatusNotFound, fmt.Sprintf("Failed to retreive review of id: %s", id))
@@ -39,7 +40,7 @@ func (h *ReviewHandler) GetByID(c echo.Context) error {
 
 }
 func (h *ReviewHandler) Create(c echo.Context) error {
-	var req requests.CreateReviewRequest
+	var req requests.ReviewRequest
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
@@ -65,7 +66,8 @@ func (h *ReviewHandler) Create(c echo.Context) error {
 
 func (h *ReviewHandler) Update(c echo.Context) error {
 	ID := c.Param("id")
-	var req requests.UpdateReviewRequest
+	var req requests.ReviewRequest
+
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
@@ -83,7 +85,6 @@ func (h *ReviewHandler) Update(c echo.Context) error {
 	review.MovieID = req.MovieID
 
 	err := h.server.Repos.Review.Update(review)
-
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("failed to update review, %v", err))
 	}
@@ -95,15 +96,18 @@ func (h *ReviewHandler) Update(c echo.Context) error {
 func (h *ReviewHandler) Delete(c echo.Context) error {
 	var toDelete models.Review
 	id := c.Param("id")
+
 	h.server.Repos.Review.Get(id, &toDelete)
 	if toDelete.ID == 0 {
 		return c.JSON(http.StatusNotFound, fmt.Sprintf("failed to find review of id: %v to delete", id))
 	}
+
 	err := h.server.Repos.Review.Delete(&toDelete)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, "failed to update obj")
 	}
-	res := fmt.Sprintf("Review of id: %v deleted sucessfully", id)
 
+	//response
+	res := fmt.Sprintf("Review of id: %v deleted sucessfully", id)
 	return c.JSON(http.StatusOK, res)
 }

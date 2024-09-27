@@ -18,12 +18,16 @@ func TestMovieCreate(t *testing.T) {
 	}
 	newMovie := models.Movie{}
 	MovieFactory(&newMovie)
-
+	movieRequest := requests.MovieRequest{
+		Name:        newMovie.Name,
+		Description: newMovie.Description,
+		Genre:       newMovie.Genre,
+	}
 	tests := []TestCase{
 		{
 			TestName:    "can create movie",
 			Request:     request,
-			RequestBody: newMovie,
+			RequestBody: movieRequest,
 			Expected: ExpectedResponse{
 				StatusCode: http.StatusCreated,
 				BodyParts: []string{
@@ -174,7 +178,7 @@ func TestMovieUpdate(t *testing.T) {
 				Method: http.MethodPut,
 				Url:    "/movies/9999",
 			},
-			RequestBody: requests.UpdateMovieRequest{
+			RequestBody: requests.MovieRequest{
 				Name:        "Updated Title",
 				Description: "Updated Desc",
 				Genre:       "Updated Genre",
@@ -190,7 +194,7 @@ func TestMovieUpdate(t *testing.T) {
 				Method: http.MethodPut,
 				Url:    "/movies/invalid-id",
 			},
-			RequestBody: requests.UpdateMovieRequest{
+			RequestBody: requests.MovieRequest{
 				Name:        "Updated Title",
 				Description: "Updated Desc",
 				Genre:       "Updated Genre",
@@ -203,7 +207,7 @@ func TestMovieUpdate(t *testing.T) {
 		{
 			TestName: "Can update movie",
 			Request:  request,
-			RequestBody: requests.UpdateMovieRequest{
+			RequestBody: requests.MovieRequest{
 				Name:        "Updated Title",
 				Description: "Updated Desc",
 				Genre:       "Updated Genre",

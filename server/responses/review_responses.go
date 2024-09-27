@@ -24,6 +24,7 @@ func NewReviewResponse(review *models.Review) *ReviewResponse {
 	}
 	res.User = *NewUserResponse(&review.User)
 	res.Movie = *NewMovieResponse(&review.Movie)
+
 	return res
 }
 
