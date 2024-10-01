@@ -16,18 +16,19 @@ func InitialiseRoutes(server *server.Server) {
 	server.Echo.GET("/", func(c echo.Context) error {
 		return c.String(http.StatusOK, "hello world")
 	})
-	//Movies
+
 	movieHandler := handlers.NewMovieHandler(server)
 	reviewHandler := handlers.NewReviewHandler(server)
 	userHandler := handlers.NewUserHandler(server)
 
+	//Movies
 	server.Echo.GET(moviePath, movieHandler.List)
 	server.Echo.GET(moviePath+"/:id", movieHandler.Get)
 	server.Echo.POST(moviePath, movieHandler.Create)
 	server.Echo.PUT(moviePath+"/:id", movieHandler.Update)
 	server.Echo.DELETE(moviePath+"/:id", movieHandler.Delete)
-	//
-	//// Reviews
+
+	// Reviews
 	server.Echo.GET(reviewPath, reviewHandler.List)
 	server.Echo.GET(reviewPath+"/:id", reviewHandler.GetByID)
 	server.Echo.POST(reviewPath, reviewHandler.Create)

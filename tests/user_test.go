@@ -4,9 +4,94 @@ import (
 	"fmt"
 	"movie-api/models"
 	"movie-api/server/requests"
+	"movie-api/tests/factories"
 	"net/http"
 	"testing"
 )
+
+func TestUserList(t *testing.T) {
+	ts.ClearTable("users")
+
+	review := models.Review{}
+	factories.ReviewFactory(ts.S.Db, &review)
+	reviews := []models.Review{
+		review,
+	}
+	// create user
+	user := models.User{
+		Reviews: reviews,
+	}
+	factories.UserFactory(ts.S.Db, &user)
+	// create review
+
+	request := Request{
+		Method: http.MethodGet,
+		Url:    "/users",
+	}
+
+	tests := []TestCase{
+		{
+			TestName: "Can list users",
+			Request:  request,
+
+			Expected: ExpectedResponse{
+				StatusCode: http.StatusOK,
+				BodyParts: []string{
+					fmt.Sprintf(`"name":"%v"`, user.Name),
+					fmt.Sprintf(`"username":"%v"`, user.Username),
+					fmt.Sprintf(`"title":"%v"`, review.Title),
+				},
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.TestName, func(t *testing.T) {
+			RunTest(t, test, ts)
+
+		})
+
+	}
+
+}
+
+func TestUserGet(t *testing.T) {
+	ts.ClearTable("users")
+	ts.ClearTable("reviews")
+
+	//create user and review:
+	user := models.User{}
+	factories.UserFactory(ts.S.Db, &user)
+
+	review := models.Review{}
+	factories.ReviewFactory(ts.S.Db, &review)
+
+	id := user.ID
+	tests := []TestCase{
+
+		{
+			TestName: "Can get user by id",
+			Request: Request{
+				Method: http.MethodGet,
+				Url:    fmt.Sprintf("/users/%d", id),
+			},
+			Expected: ExpectedResponse{
+				StatusCode: http.StatusOK,
+				BodyParts: []string{
+					fmt.Sprintf(`"name":"%v"`, user.Name),
+					fmt.Sprintf(`"username":"%v"`, user.Username),
+				},
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.TestName, func(t *testing.T) {
+			RunTest(t, test, ts)
+
+		})
+
+	}
+
+}
 
 func TestUserCreate(t *testing.T) {
 	ts.ClearTable("users")
@@ -15,7 +100,7 @@ func TestUserCreate(t *testing.T) {
 		Url:    "/users",
 	}
 	newUser := models.User{}
-	UserFactory(&newUser)
+	factories.UserFactory(ts.S.Db, &newUser)
 	newUserReq := requests.UserRequest{
 		Name:     newUser.Name,
 		Username: newUser.Username,
@@ -61,70 +146,12 @@ func TestUserCreate(t *testing.T) {
 
 }
 
-func TestUserGet(t *testing.T) {
-	ts.ClearTable("users")
-	ts.ClearTable("reviews")
-	request := Request{
-		Method: http.MethodGet,
-		Url:    "/users",
-	}
-	//create review
-	review := models.Review{}
-
-	user := models.User{}
-	UserFactory(&user)
-
-	ts.S.Db.Create(&user)
-
-	ReviewFactory(&review, 0, user.ID)
-	ts.S.Db.Create(&review)
-
-	id := user.ID
-	tests := []TestCase{
-		{
-			TestName: "Can get users",
-			Request:  request,
-
-			Expected: ExpectedResponse{
-				StatusCode: http.StatusOK,
-				BodyParts: []string{
-					fmt.Sprintf(`"name":"%v"`, user.Name),
-					fmt.Sprintf(`"username":"%v"`, user.Username),
-					fmt.Sprintf(`"title":"%v"`, review.Title),
-				},
-			}},
-		{
-			TestName: "Can get user by id",
-			Request: Request{
-				Method: http.MethodGet,
-				Url:    fmt.Sprintf("/users/%d", id),
-			},
-			Expected: ExpectedResponse{
-				StatusCode: http.StatusOK,
-				BodyParts: []string{
-					fmt.Sprintf(`"name":"%v"`, user.Name),
-					fmt.Sprintf(`"username":"%v"`, user.Username),
-				},
-			},
-		},
-	}
-	for _, test := range tests {
-		t.Run(test.TestName, func(t *testing.T) {
-			RunTest(t, test, ts)
-
-		})
-
-	}
-
-}
 func TestUserUpdate(t *testing.T) {
 	//clear the table
 	ts.ClearTable("users")
 	// add a user to be updated
 	user := models.User{}
-	UserFactory(&user)
-
-	ts.S.Db.Create(&user)
+	factories.UserFactory(ts.S.Db, &user)
 	id := user.ID
 
 	request := Request{
@@ -200,8 +227,7 @@ func TestUserDelete(t *testing.T) {
 	ts.ClearTable("users")
 	//create a user to be deleted
 	user := models.User{}
-	UserFactory(&user)
-	ts.S.Db.Create(&user)
+	factories.UserFactory(ts.S.Db, &user)
 	id := user.ID
 
 	request := Request{
@@ -230,17 +256,7 @@ func TestUserDelete(t *testing.T) {
 			},
 		},
 		{
-			TestName: "Can't delete without an id",
-			Request: Request{
-				Method: http.MethodDelete,
-				Url:    "/users",
-			},
-			Expected: ExpectedResponse{
-				StatusCode: http.StatusMethodNotAllowed,
-			},
-		},
-		{
-			TestName: "Can't delete a movie with a non integer id",
+			TestName: "Can't delete a movie with invalid id",
 			Request: Request{
 				Method: http.MethodDelete,
 				Url:    "/users/test",

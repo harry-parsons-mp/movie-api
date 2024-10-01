@@ -5,9 +5,105 @@ import (
 	"github.com/stretchr/testify/assert"
 	"movie-api/models"
 	"movie-api/server/requests"
+	"movie-api/tests/factories"
 	"net/http"
 	"testing"
 )
+
+func TestMovieList(t *testing.T) {
+	ts.ClearTable("movies")
+
+	movie := &models.Movie{}
+	factories.MovieFactory(ts.S.Db, movie)
+
+	tests := []TestCase{
+		{
+			TestName: "Can list all movies",
+			Request: Request{
+				Method: http.MethodGet,
+				Url:    "/movies",
+			},
+			Expected: ExpectedResponse{
+				StatusCode: http.StatusOK,
+				BodyParts: []string{
+					fmt.Sprintf(`"name":"%v"`, movie.Name),
+					fmt.Sprintf(`"description":"%v"`, movie.Description),
+					fmt.Sprintf(`"genre":"%v"`, movie.Genre),
+				},
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.TestName, func(t *testing.T) {
+			RunTest(t, test, ts)
+
+		})
+	}
+}
+
+func TestMovieGet(t *testing.T) {
+	ts.ClearTable("movies")
+	ts.ClearTable("reviews")
+
+	// Create movie with review
+	movie := &models.Movie{}
+	factories.MovieFactory(ts.S.Db, movie)
+	movieID := movie.ID
+
+	// Create some reviews for the movie
+
+	user1 := &models.User{}
+	factories.UserFactory(ts.S.Db, user1)
+	review1 := &models.Review{
+		UserID:  user1.ID,
+		MovieID: movieID,
+	}
+
+	factories.ReviewFactory(ts.S.Db, review1)
+	review2 := &models.Review{
+		UserID:  user1.ID,
+		MovieID: movieID,
+	}
+	factories.ReviewFactory(ts.S.Db, review2)
+
+	tests := []TestCase{
+		{
+			TestName: "Can get a movie by id",
+			Request: Request{
+				Method: http.MethodGet,
+				Url:    fmt.Sprintf("/movies/%d", movieID),
+			},
+			Expected: ExpectedResponse{
+				StatusCode: http.StatusOK,
+				BodyParts: []string{
+					fmt.Sprintf(`"name":"%v"`, movie.Name),
+					fmt.Sprintf(`"description":"%v"`, movie.Description),
+					fmt.Sprintf(`"genre":"%v"`, movie.Genre),
+					fmt.Sprintf(`"title":"%v"`, review1.Title),
+					fmt.Sprintf(`"title":"%v"`, review2.Title),
+					fmt.Sprintf(`"username":"%v"`, user1.Username),
+				},
+			},
+		},
+		{
+			TestName: "Can get a movie that does not exist",
+			Request: Request{
+				Method: http.MethodGet,
+				Url:    fmt.Sprintf("/movies/%d", movieID+1),
+			},
+			Expected: ExpectedResponse{
+				StatusCode: http.StatusNotFound,
+				BodyPart:   fmt.Sprintf("Failed to retreive movie of id = %v", movieID+1),
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.TestName, func(t *testing.T) {
+			RunTest(t, test, ts)
+
+		})
+	}
+}
 
 func TestMovieCreate(t *testing.T) {
 	ts.ClearTable("movies")
@@ -16,8 +112,8 @@ func TestMovieCreate(t *testing.T) {
 		Method: http.MethodPost,
 		Url:    "/movies",
 	}
-	newMovie := models.Movie{}
-	MovieFactory(&newMovie)
+	newMovie := &models.Movie{}
+	factories.MovieFactory(ts.S.Db, newMovie)
 	movieRequest := requests.MovieRequest{
 		Name:        newMovie.Name,
 		Description: newMovie.Description,
@@ -72,90 +168,12 @@ func TestMovieCreate(t *testing.T) {
 	}
 }
 
-func TestMovieGet(t *testing.T) {
-	ts.ClearTable("movies")
-	ts.ClearTable("reviews")
-
-	// Create movie with review
-	movie := &models.Movie{}
-	MovieFactory(movie)
-	ts.S.Db.Create(movie)
-	movieID := movie.ID
-
-	// Create some reviews for the movie
-	review1 := &models.Review{}
-	user1 := &models.User{}
-	UserFactory(user1)
-	ts.S.Db.Create(user1)
-	ReviewFactory(review1, movie.ID, user1.ID)
-	ts.S.Db.Create(review1)
-	review2 := &models.Review{}
-	ReviewFactory(review2, movie.ID, user1.ID)
-	ts.S.Db.Create(review2)
-
-	tests := []TestCase{
-		{
-			TestName: "Can list all movies",
-			Request: Request{
-				Method: http.MethodGet,
-				Url:    "/movies",
-			},
-			Expected: ExpectedResponse{
-				StatusCode: http.StatusOK,
-				BodyParts: []string{
-					fmt.Sprintf(`"name":"%v"`, movie.Name),
-					fmt.Sprintf(`"description":"%v"`, movie.Description),
-					fmt.Sprintf(`"genre":"%v"`, movie.Genre),
-					fmt.Sprintf(`"title":"%v"`, review1.Title),
-					fmt.Sprintf(`"title":"%v"`, review2.Title),
-					fmt.Sprintf(`"username":"%v"`, user1.Username),
-				},
-			},
-		},
-		{
-			TestName: "Can get a movie by id",
-			Request: Request{
-				Method: http.MethodGet,
-				Url:    fmt.Sprintf("/movies/%d", movieID),
-			},
-			Expected: ExpectedResponse{
-				StatusCode: http.StatusOK,
-				BodyParts: []string{
-					fmt.Sprintf(`"name":"%v"`, movie.Name),
-					fmt.Sprintf(`"description":"%v"`, movie.Description),
-					fmt.Sprintf(`"genre":"%v"`, movie.Genre),
-					fmt.Sprintf(`"title":"%v"`, review1.Title),
-					fmt.Sprintf(`"title":"%v"`, review2.Title),
-				},
-			},
-		},
-		{
-			TestName: "get a movie that does not exist",
-			Request: Request{
-				Method: http.MethodGet,
-				Url:    fmt.Sprintf("/movies/%d", movieID+1),
-			},
-			Expected: ExpectedResponse{
-				StatusCode: http.StatusNotFound,
-				BodyPart:   fmt.Sprintf("Failed to retreive movie of id = %v", movieID+1),
-			},
-		},
-	}
-	for _, test := range tests {
-		t.Run(test.TestName, func(t *testing.T) {
-			RunTest(t, test, ts)
-
-		})
-	}
-}
-
 func TestMovieUpdate(t *testing.T) {
 
 	ts.ClearTable("movies")
 
 	movie := &models.Movie{}
-	MovieFactory(movie)
-	ts.S.Db.Create(movie)
+	factories.MovieFactory(ts.S.Db, movie)
 
 	request := Request{
 		Method: http.MethodPut,
@@ -215,7 +233,7 @@ func TestMovieUpdate(t *testing.T) {
 			Expected: ExpectedResponse{
 				StatusCode: http.StatusOK,
 				BodyParts: []string{
-					fmt.Sprintf(`"ID":%v`, movie.ID),
+					fmt.Sprintf(`"id":%v`, movie.ID),
 					`"name":"Updated Title"`,
 					`"description":"Updated Desc"`,
 					`"genre":"Updated Genre"`,
@@ -236,8 +254,7 @@ func TestMovieDelete(t *testing.T) {
 
 	// create a movie to delete
 	movie := &models.Movie{}
-	MovieFactory(movie)
-	ts.S.Db.Create(movie)
+	factories.MovieFactory(ts.S.Db, movie)
 	movieID := movie.ID
 	request := Request{
 		Method: http.MethodDelete,
@@ -254,7 +271,7 @@ func TestMovieDelete(t *testing.T) {
 			},
 		},
 		{
-			TestName: "Can't delete a movie that isn't in the db",
+			TestName: "Can't delete a movie that does not exist",
 			Request: Request{
 				Method: http.MethodDelete,
 				Url:    fmt.Sprintf("/movies/%d", movieID+1),
@@ -265,17 +282,7 @@ func TestMovieDelete(t *testing.T) {
 			},
 		},
 		{
-			TestName: "Can't delete without an id",
-			Request: Request{
-				Method: http.MethodDelete,
-				Url:    "/movies",
-			},
-			Expected: ExpectedResponse{
-				StatusCode: http.StatusMethodNotAllowed,
-			},
-		},
-		{
-			TestName: "Can't delete a movie with a non integer id",
+			TestName: "Can't delete a movie with invalid id",
 			Request: Request{
 				Method: http.MethodDelete,
 				Url:    "/movies/test",

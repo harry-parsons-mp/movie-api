@@ -2,6 +2,7 @@ package repos
 
 import (
 	"gorm.io/gorm"
+	"movie-api/models"
 )
 
 type UserRepo struct {
@@ -12,10 +13,10 @@ func NewUserRepo(db *gorm.DB) *UserRepo {
 	return &UserRepo{&Repository{Db: db}}
 }
 
-func (u *UserRepo) List(obj interface{}) {
+func (u *UserRepo) List(obj *[]models.User) {
 	u.Db.Preload("Reviews").Find(obj)
 }
 
-func (u *UserRepo) Get(id, obj interface{}) {
+func (u *UserRepo) Get(id interface{}, obj *models.User) {
 	u.Db.Preload("Reviews").Where("id = ?", id).Find(obj)
 }

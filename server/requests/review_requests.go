@@ -1,7 +1,6 @@
 package requests
 
 type ReviewRequest struct {
-	ID      uint   `json:"id"`
 	Title   string `json:"title"`
 	Content string `json:"content"`
 	Score   uint   `json:"score"`

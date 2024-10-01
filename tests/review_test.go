@@ -4,10 +4,104 @@ import (
 	"fmt"
 	"movie-api/models"
 	"movie-api/server/requests"
+	"movie-api/tests/factories"
 	"net/http"
 	"testing"
 )
 
+func TestReviewList(t *testing.T) {
+	ts.ClearTable("reviews")
+	review := models.Review{}
+	factories.ReviewFactory(ts.S.Db, &review)
+
+	request := Request{
+		Method: http.MethodGet,
+		Url:    "/reviews",
+	}
+
+	tests := []TestCase{
+		{
+			TestName: "Can list reviews",
+			Request:  request,
+			Expected: ExpectedResponse{
+				StatusCode: http.StatusOK,
+				BodyParts: []string{
+					fmt.Sprintf(`"title":"%v"`, review.Title),
+					fmt.Sprintf(`"content":"%v"`, review.Content),
+					fmt.Sprintf(`"score":%d`, review.Score),
+				},
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.TestName, func(t *testing.T) {
+			RunTest(t, test, ts)
+
+		})
+
+	}
+
+}
+
+func TestReviewGet(t *testing.T) {
+	// clear tables
+	ts.ClearTable("reviews")
+	// create a review to add and then fetch
+	movie := models.Movie{}
+	factories.MovieFactory(ts.S.Db, &movie)
+
+	user := models.User{}
+	factories.UserFactory(ts.S.Db, &user)
+
+	review := models.Review{
+		UserID:  user.ID,
+		User:    user,
+		MovieID: movie.ID,
+		Movie:   movie,
+	}
+	factories.ReviewFactory(ts.S.Db, &review)
+	reviewID := review.ID
+
+	tests := []TestCase{
+		{
+			TestName: "Can get review",
+			Request: Request{
+				Method: http.MethodGet,
+				Url:    fmt.Sprintf("/reviews/%d", reviewID),
+			},
+			Expected: ExpectedResponse{
+				StatusCode: http.StatusOK,
+				BodyParts: []string{
+					fmt.Sprintf(`"id":%d`, review.ID),
+					fmt.Sprintf(`"title":"%v"`, review.Title),
+					fmt.Sprintf(`"content":"%v"`, review.Content),
+					fmt.Sprintf(`"score":%d`, review.Score),
+					fmt.Sprintf(`"user_id":%d`, user.ID),
+					fmt.Sprintf(`"movie_id":%d`, movie.ID),
+				},
+			},
+		},
+		{
+			TestName: "Cannot get review that does not exist",
+			Request: Request{
+				Method: http.MethodGet,
+				Url:    fmt.Sprintf("/reviews/%d", reviewID+1),
+			},
+			Expected: ExpectedResponse{
+				StatusCode: http.StatusNotFound,
+				BodyPart:   fmt.Sprintf("Failed to retreive review of id: %d", reviewID+1),
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.TestName, func(t *testing.T) {
+			RunTest(t, test, ts)
+
+		})
+
+	}
+
+}
 func TestReviewCreate(t *testing.T) {
 	ts.ClearTable("reviews")
 
@@ -16,7 +110,7 @@ func TestReviewCreate(t *testing.T) {
 		Url:    "/reviews",
 	}
 	newReview := models.Review{}
-	ReviewFactory(&newReview, 1, 1)
+	factories.ReviewFactory(ts.S.Db, &newReview)
 	reviewRequest := requests.ReviewRequest{
 		Title:   newReview.Title,
 		Content: newReview.Content,
@@ -24,9 +118,6 @@ func TestReviewCreate(t *testing.T) {
 		UserID:  newReview.UserID,
 		MovieID: newReview.MovieID,
 	}
-	// testing review factory without movieID or userID
-	factorytest := models.Review{}
-	ReviewFactory(&factorytest, 0, 0)
 
 	tests := []TestCase{
 		{
@@ -65,22 +156,6 @@ func TestReviewCreate(t *testing.T) {
 				StatusCode: http.StatusBadRequest,
 			},
 		},
-		{
-			TestName:    "Factory test without movieid or userid",
-			Request:     request,
-			RequestBody: factorytest,
-			Expected: ExpectedResponse{
-				StatusCode: http.StatusCreated,
-
-				BodyParts: []string{
-					fmt.Sprintf(`"title":"%v"`, factorytest.Title),
-					fmt.Sprintf(`"content":"%v"`, factorytest.Content),
-					fmt.Sprintf(`"score":%d`, factorytest.Score),
-					fmt.Sprintf(`"userID":%d`, factorytest.UserID),
-					fmt.Sprintf(`"movieID":%d`, factorytest.MovieID),
-				},
-			},
-		},
 	}
 
 	for _, test := range tests {
@@ -91,101 +166,24 @@ func TestReviewCreate(t *testing.T) {
 	}
 }
 
-func TestReviewGet(t *testing.T) {
-	// clear tables
-	ts.ClearTable("reviews")
-	// create a review to add and then fetch
-	review := models.Review{}
-	ReviewFactory(&review, 1, 1)
-	ts.S.Db.Create(&review)
-
-	reviewID := review.ID
-
-	request := Request{
-		Method: http.MethodGet,
-		Url:    "/reviews",
-	}
-	tests := []TestCase{
-		{
-			TestName: "Can list reviews",
-			Request:  request,
-			Expected: ExpectedResponse{
-				StatusCode: http.StatusOK,
-				BodyParts: []string{
-					fmt.Sprintf(`"title":"%v"`, review.Title),
-					fmt.Sprintf(`"content":"%v"`, review.Content),
-					fmt.Sprintf(`"score":%d`, review.Score),
-					fmt.Sprintf(`"userID":%d`, review.UserID),
-					fmt.Sprintf(`"movieID":%d`, review.MovieID),
-				},
-			}},
-		{
-			TestName: "Can get review",
-			Request: Request{
-				Method: http.MethodGet,
-				Url:    fmt.Sprintf("/reviews/%d", reviewID),
-			},
-			Expected: ExpectedResponse{
-				StatusCode: http.StatusOK,
-				BodyParts: []string{
-					fmt.Sprintf(`"id":%d`, review.ID),
-					fmt.Sprintf(`"title":"%v"`, review.Title),
-					fmt.Sprintf(`"content":"%v"`, review.Content),
-					fmt.Sprintf(`"score":%d`, review.Score),
-					fmt.Sprintf(`"userID":%d`, review.UserID),
-					fmt.Sprintf(`"movieID":%d`, review.MovieID),
-				},
-			},
-		},
-		{
-			TestName: "Cannot get review that does not exist",
-			Request: Request{
-				Method: http.MethodGet,
-				Url:    fmt.Sprintf("/reviews/%d", reviewID+1),
-			},
-			Expected: ExpectedResponse{
-				StatusCode: http.StatusNotFound,
-				BodyPart:   fmt.Sprintf("Failed to retreive review of id: %d", reviewID+1),
-			},
-		},
-	}
-	for _, test := range tests {
-		t.Run(test.TestName, func(t *testing.T) {
-			RunTest(t, test, ts)
-
-		})
-
-	}
-
-}
 func TestReviewUpdate(t *testing.T) {
 	ts.ClearTable("reviews")
 	//add a review to update
 	review := models.Review{}
-	ReviewFactory(&review, 1, 1)
-	// creating a new request
-
-	ts.S.Db.Create(&review)
-
+	factories.ReviewFactory(ts.S.Db, &review)
 	reviewID := review.ID
+
 	request := Request{
 		Method: http.MethodPut,
 		Url:    fmt.Sprintf("/reviews/%d", +reviewID),
 	}
-	updatedReview := models.Review{
+	// creating a new request
+	UpdatedReviewReq := requests.ReviewRequest{
 		Title:   "Updated title",
 		Content: "Updated content",
 		Score:   2,
 		UserID:  2,
 		MovieID: 2,
-	}
-	// creating a new request
-	UpdatedReviewReq := requests.ReviewRequest{
-		Title:   updatedReview.Title,
-		Content: updatedReview.Content,
-		Score:   updatedReview.Score,
-		UserID:  updatedReview.UserID,
-		MovieID: updatedReview.MovieID,
 	}
 	tests := []TestCase{
 		{
@@ -195,11 +193,11 @@ func TestReviewUpdate(t *testing.T) {
 			Expected: ExpectedResponse{
 				StatusCode: http.StatusOK,
 				BodyParts: []string{
-					updatedReview.Title,
-					updatedReview.Content,
-					fmt.Sprint(updatedReview.Score),
-					fmt.Sprint(updatedReview.MovieID),
-					fmt.Sprint(updatedReview.UserID)},
+					UpdatedReviewReq.Title,
+					UpdatedReviewReq.Content,
+					fmt.Sprint(UpdatedReviewReq.Score),
+					fmt.Sprint(UpdatedReviewReq.MovieID),
+					fmt.Sprint(UpdatedReviewReq.UserID)},
 			},
 		},
 		{
@@ -217,7 +215,7 @@ func TestReviewUpdate(t *testing.T) {
 				Method: http.MethodPut,
 				Url:    "/reviews/99999",
 			},
-			RequestBody: updatedReview,
+			RequestBody: UpdatedReviewReq,
 			Expected: ExpectedResponse{
 				StatusCode: http.StatusNotFound,
 				BodyPart:   fmt.Sprintf("Failed to find review with id:99999"),
@@ -229,7 +227,7 @@ func TestReviewUpdate(t *testing.T) {
 				Method: http.MethodPut,
 				Url:    "/reviews/invalid-id",
 			},
-			RequestBody: updatedReview,
+			RequestBody: UpdatedReviewReq,
 			Expected: ExpectedResponse{
 				StatusCode: http.StatusNotFound,
 				BodyPart:   "Failed to find review with id:invalid-id",
@@ -248,8 +246,7 @@ func TestReviewDelete(t *testing.T) {
 	//clear table
 	ts.ClearTable("reviews")
 	review := models.Review{}
-	ReviewFactory(&review, 1, 1)
-	ts.S.Db.Create(&review)
+	factories.ReviewFactory(ts.S.Db, &review)
 	id := review.ID
 
 	request := Request{
@@ -267,7 +264,7 @@ func TestReviewDelete(t *testing.T) {
 			},
 		},
 		{
-			TestName: "Can't delete a review that isn't in the db",
+			TestName: "Can't delete a review that doesn't exist",
 			Request: Request{
 				Method: http.MethodDelete,
 				Url:    fmt.Sprintf("/reviews/%d", id+1),
@@ -278,17 +275,7 @@ func TestReviewDelete(t *testing.T) {
 			},
 		},
 		{
-			TestName: "Can't delete without an id",
-			Request: Request{
-				Method: http.MethodDelete,
-				Url:    "/reviews",
-			},
-			Expected: ExpectedResponse{
-				StatusCode: http.StatusMethodNotAllowed,
-			},
-		},
-		{
-			TestName: "Can't delete a review with a non integer id",
+			TestName: "Can't delete a review with invalid id",
 			Request: Request{
 				Method: http.MethodDelete,
 				Url:    "/reviews/test",

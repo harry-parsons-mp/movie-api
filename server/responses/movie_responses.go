@@ -5,11 +5,11 @@ import (
 )
 
 type MovieResponse struct {
-	ID          uint                  `json:"ID"`
-	Name        string                `json:"name"`
-	Description string                `json:"description"`
-	Genre       string                `json:"genre"`
-	Review      []MovieReviewResponse `json:"reviews"`
+	ID          uint             `json:"id"`
+	Name        string           `json:"name"`
+	Description string           `json:"description"`
+	Genre       string           `json:"genre"`
+	Review      []ReviewResponse `json:"reviews"`
 }
 
 type MovieReviewResponse struct {
@@ -28,19 +28,10 @@ func NewMovieResponse(movie *models.Movie) *MovieResponse {
 		Description: movie.Description,
 		Genre:       movie.Genre,
 	}
-	//res.Review = make([]ReviewResponse, len(movie.Reviews))
-	//res.Review = NewReviewsResponse(movie.Reviews)
-
-	for _, review := range movie.Reviews {
-		res.Review = append(res.Review, MovieReviewResponse{
-			ID:      review.ID,
-			Title:   review.Title,
-			Content: review.Content,
-			Score:   review.Score,
-			UserID:  review.UserID,
-			User:    *NewUserResponse(&review.User),
-		})
+	if movie.Reviews != nil {
+		res.Review = NewReviewsResponse(movie.Reviews)
 	}
+
 	return res
 }
 

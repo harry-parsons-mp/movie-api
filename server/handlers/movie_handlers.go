@@ -31,8 +31,8 @@ func (h *MovieHandler) List(c echo.Context) error {
 
 func (h *MovieHandler) Get(c echo.Context) error {
 	id := c.Param("id")
-	movie := &models.Movie{}
 
+	movie := &models.Movie{}
 	h.server.Repos.Movie.Get(id, movie)
 	if movie.ID == 0 {
 		return c.JSON(http.StatusNotFound, fmt.Sprintf("Failed to retreive movie of id = %v", id))
@@ -40,18 +40,18 @@ func (h *MovieHandler) Get(c echo.Context) error {
 
 	res := responses.NewMovieResponse(movie)
 	return c.JSON(http.StatusOK, res)
-
 }
 
 func (h *MovieHandler) Create(c echo.Context) error {
 	var req requests.MovieRequest
-
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
+
 	if req.Name == "" {
 		return c.JSON(http.StatusBadRequest, "name of movie required")
 	}
+
 	// create movie:
 	mov := &models.Movie{
 		Name:        req.Name,
@@ -71,8 +71,8 @@ func (h *MovieHandler) Create(c echo.Context) error {
 
 func (h *MovieHandler) Update(c echo.Context) error {
 	ID := c.Param("id")
-	var updateRequest requests.MovieRequest
 
+	var updateRequest requests.MovieRequest
 	if err := c.Bind(&updateRequest); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
@@ -85,7 +85,6 @@ func (h *MovieHandler) Update(c echo.Context) error {
 	}
 
 	// Update the movie
-
 	mov.Name = updateRequest.Name
 	mov.Description = updateRequest.Description
 	mov.Genre = updateRequest.Genre
@@ -102,9 +101,8 @@ func (h *MovieHandler) Update(c echo.Context) error {
 
 func (h *MovieHandler) Delete(c echo.Context) error {
 	ID := c.Param("id")
-	var toDelete models.Movie
 
-	// check if movie exists
+	var toDelete models.Movie
 	h.server.Repos.Movie.Get(ID, &toDelete)
 	if toDelete.ID == 0 {
 		return c.JSON(http.StatusNotFound, fmt.Sprintf("failed to find movie of id: %v", ID))
@@ -114,7 +112,8 @@ func (h *MovieHandler) Delete(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, "failed to update movie")
 	}
-	// create response
+
+	//response
 	res := fmt.Sprintf("Movie of id: %v deleted sucessfully", ID)
 	return c.JSON(http.StatusOK, res)
 }

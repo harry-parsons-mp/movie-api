@@ -27,13 +27,14 @@ func (h *UserHandler) List(c echo.Context) error {
 	return c.JSON(http.StatusOK, res)
 }
 func (h *UserHandler) Get(c echo.Context) error {
-	var user models.User
 	id := c.Param("id")
 
+	user := models.User{}
 	h.server.Repos.User.Get(id, &user)
 	if user.ID == 0 {
 		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("Failed to retrieve user id: %v", id))
 	}
+
 	//response
 	res := responses.NewUserResponse(&user)
 	return c.JSON(http.StatusOK, res)
@@ -41,23 +42,24 @@ func (h *UserHandler) Get(c echo.Context) error {
 
 func (h *UserHandler) Create(c echo.Context) error {
 	var req requests.UserRequest
-
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
+
 	if req.Username == "" {
 		return c.JSON(http.StatusBadRequest, "username is required")
 	}
+
 	//create user
 	user := models.User{
 		Name:     req.Name,
 		Username: req.Username,
 	}
-
 	err := h.server.Repos.User.Create(&user)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, "failed to add user")
 	}
+
 	//response
 	res := responses.NewUserResponse(&user)
 	return c.JSON(http.StatusCreated, res)
@@ -81,6 +83,7 @@ func (h *UserHandler) Update(c echo.Context) error {
 	// Update the user
 	user.Name = updateRequest.Name
 	user.Username = updateRequest.Username
+
 	err := h.server.Repos.User.Update(user)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("failed to update user, %v", err))

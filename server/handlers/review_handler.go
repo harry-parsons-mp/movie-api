@@ -26,27 +26,31 @@ func (h *ReviewHandler) List(c echo.Context) error {
 	res := responses.NewReviewsResponse(reviews)
 	return c.JSON(http.StatusOK, res)
 }
+
 func (h *ReviewHandler) GetByID(c echo.Context) error {
 	id := c.Param("id")
-	review := &models.Review{}
 
+	review := &models.Review{}
 	h.server.Repos.Review.Get(id, review)
 	if review.ID == 0 {
 		return c.JSON(http.StatusNotFound, fmt.Sprintf("Failed to retreive review of id: %s", id))
 	}
+
 	//response
 	res := responses.NewReviewResponse(review)
 	return c.JSON(http.StatusOK, res)
-
 }
+
 func (h *ReviewHandler) Create(c echo.Context) error {
 	var req requests.ReviewRequest
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
+
 	if req.Title == "" {
 		c.JSON(http.StatusBadRequest, "review title is required")
 	}
+
 	// create review from request
 	review := models.Review{
 		Title:   req.Title,
@@ -59,6 +63,7 @@ func (h *ReviewHandler) Create(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, "failed to add review")
 	}
+
 	//response
 	res := responses.NewReviewResponse(&review)
 	return c.JSON(http.StatusCreated, res)
@@ -66,18 +71,20 @@ func (h *ReviewHandler) Create(c echo.Context) error {
 
 func (h *ReviewHandler) Update(c echo.Context) error {
 	ID := c.Param("id")
-	var req requests.ReviewRequest
 
+	var req requests.ReviewRequest
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
-	// check user exists
+
+	// check review exists
 	review := &models.Review{}
-	h.server.Repos.User.Get(ID, review)
+	h.server.Repos.Review.Get(ID, review)
 	if review.ID == 0 {
 		return c.JSON(http.StatusNotFound, fmt.Sprintf("Failed to find review with id:%s", ID))
 	}
-	// Update the user
+
+	// Update the review
 	review.Title = req.Title
 	review.Content = req.Content
 	review.Score = req.Score
@@ -88,6 +95,7 @@ func (h *ReviewHandler) Update(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("failed to update review, %v", err))
 	}
+
 	// create response
 	res := responses.NewReviewResponse(review)
 	return c.JSON(http.StatusOK, res)
@@ -95,8 +103,8 @@ func (h *ReviewHandler) Update(c echo.Context) error {
 
 func (h *ReviewHandler) Delete(c echo.Context) error {
 	var toDelete models.Review
-	id := c.Param("id")
 
+	id := c.Param("id")
 	h.server.Repos.Review.Get(id, &toDelete)
 	if toDelete.ID == 0 {
 		return c.JSON(http.StatusNotFound, fmt.Sprintf("failed to find review of id: %v to delete", id))
