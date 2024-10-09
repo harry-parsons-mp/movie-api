@@ -1,57 +1,76 @@
 package server_test
 
 import (
-	"fmt"
+	"bytes"
+	"encoding/json"
 	"github.com/labstack/echo/v4"
-	"gorm.io/gorm"
+	"log"
+	"movie-api/handlers"
 	"movie-api/models"
+	"movie-api/repos"
 	"movie-api/server"
 	"net/http"
 	"net/http/httptest"
-	"reflect"
+	"os"
 	"testing"
 )
 
-var db *gorm.DB
-
 func TestServer(t *testing.T) {
+	os.Setenv("TEST_MODE", "1")
+	defer os.Unsetenv("TEST_MODE") // Clean up after test
+
+	testServer := server.Server{}
+	testServer.InitialiseDB("test_db.tb")
+	defer testServer.CloseDB()
+	log.Println("Init routes")
+	testServer.InitialiseRoutes()
+	testServer.MovieRepo = repos.NewMovieRepo(testServer.Db)
+	movieHandler := handlers.NewMovieHandler(testServer.MovieRepo)
 
 	t.Run("return 200 OK", func(t *testing.T) {
-		//e := echo.New()
-		req := httptest.NewRequest(http.MethodGet, "/", nil)
+		log.Println("starting test")
+		req := httptest.NewRequest(http.MethodGet, "/movies", nil)
 		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 		rec := httptest.NewRecorder()
-		//c := e.NewContext(req, rec)
+
+		c := testServer.E.NewContext(req, rec)
+
+		log.Println("Calling GetAllMovies")
+
+		if err := movieHandler.GetAllMovies(c); err != nil {
+			t.Fatalf("handler error: %v", err)
+		}
 
 		if rec.Code != http.StatusOK {
 			t.Errorf("got %d, want %d", rec.Code, http.StatusOK)
 		}
 
 	})
-	t.Run("/movies returns the correct list of movies", func(t *testing.T) {
-		e := echo.New()
-		db = server.ConnectDB()
-
-		req := httptest.NewRequest(http.MethodGet, "/movies", nil)
+	t.Run("add a movie and check it is in the db", func(t *testing.T) {
+		testMovie := models.Movie{Name: "TestMovie", Description: "Test desc", Genre: "Testing"}
+		jsonMovie, err := json.Marshal(testMovie)
+		if err != nil {
+			panic(err)
+		}
+		req := httptest.NewRequest(http.MethodPost, "/movie", bytes.NewBuffer(jsonMovie))
 		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 		rec := httptest.NewRecorder()
-		fmt.Println(rec)
-		c := e.NewContext(req, rec)
-		server.ListMovies()
-		if rec.Code != http.StatusOK {
-			t.Errorf("error connecting to the server")
+
+		c := testServer.E.NewContext(req, rec)
+
+		got := &models.Movie{}
+		derr := json.NewDecoder(rec.Body).Decode(got)
+		if derr != nil {
+			panic(derr)
 		}
-		var wantedMovies models.Movie
-		db.Find(&wantedMovies)
+		log.Println(got.Name)
 
-		want := wantedMovies
-		got := rec.Body.String()
-
-		fmt.Println(got)
-		if !reflect.DeepEqual(got, (want)) {
-			t.Errorf("got: %+v want: %+v", got, want)
+		if err := movieHandler.GetMovieByID(c); err != nil {
+			t.Fatalf("handler error: %v", err)
 		}
-
 	})
 
+	testServer.E.Close()
 }
+
+
