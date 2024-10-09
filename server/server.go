@@ -5,36 +5,32 @@ import (
 	"github.com/labstack/echo/v4"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	"movie-api/handlers"
+	"log"
 	"movie-api/models"
 	"movie-api/repos"
-	"net/http"
 	"os"
 )
 
 type Server struct {
-	Db         *gorm.DB
-	E          *echo.Echo
-	MovieRepo  repos.MovieRepo
-	ReviewRepo repos.ReviewRepo
+	Db    *gorm.DB
+	Echo  *echo.Echo
+	Repos *repos.Repos
 }
 
-func MigrateDB[T any](database *gorm.DB, model T) {
-	err := database.AutoMigrate(model)
-	if err != nil {
-		fmt.Errorf("failed to migrate")
-	}
-
+func NewServer(path string) *Server {
+	s := Server{}
+	s.InitialiseDB(path)
+	s.Repos = repos.NewRepos(s.Db)
+	return &s
 }
-
 func (server *Server) InitialiseDB(path string) {
-	server.E = echo.New()
+	server.Echo = echo.New()
 
 	Db, err := gorm.Open(sqlite.Open(path), &gorm.Config{})
 	if err != nil {
 		panic("failed to connect to Db")
 	}
-	Db.AutoMigrate(&models.Movie{}, &models.Rating{}, &models.Review{}, &models.User{})
+	Db.AutoMigrate(&models.Movie{}, &models.Review{}, &models.User{})
 	server.Db = Db
 
 }
@@ -47,35 +43,11 @@ func (server *Server) CloseDB() {
 	db.Close()
 
 }
+func (server *Server) Start() {
+	server.Echo.Logger.Fatal(server.Echo.Start(":1234"))
+}
+func (server *Server) DeleteDB(path string) {
+	log.Println("Deleting db...")
+	os.Remove(path)
 
-func (server *Server) InitialiseRoutes() {
-	server.E.GET("/", func(c echo.Context) error {
-		return c.String(http.StatusOK, "hello world")
-	})
-	//Movies
-	server.MovieRepo = repos.NewMovieRepo(server.Db)
-	movieHandler := handlers.NewMovieHandler(server.MovieRepo)
-
-	server.E.GET("/movies", movieHandler.GetAllMovies)
-	server.E.GET("/movie/:id", movieHandler.GetMovieByID)
-	server.E.POST("/movie", movieHandler.CreateMovie)
-	server.E.PUT("/movie", movieHandler.UpdateMovie)
-	server.E.DELETE("/movie", movieHandler.DeleteMovie)
-	//// Reviews
-	server.ReviewRepo = repos.NewReviewRepo(server.Db)
-	reviewHandler := handlers.NewReviewHandler(server.ReviewRepo)
-
-	server.E.GET("/reviews", reviewHandler.GetAllReviews)
-	server.E.GET("/review/:id", reviewHandler.GetReviewByID)
-	server.E.POST("review", reviewHandler.CreateReview)
-	server.E.PUT("/review", reviewHandler.UpdateReview)
-	server.E.DELETE("/review", reviewHandler.DeleteReview)
-
-	//// Users
-	//server.E.GET("/user/:username", Server.GetUser)
-	//server.E.POST("/user", Server.AddUser)
-
-	if os.Getenv("TEST_MODE") == "" {
-		server.E.Logger.Fatal(server.E.Start(":1234"))
-	}
 }

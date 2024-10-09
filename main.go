@@ -1,11 +1,12 @@
 package main
 
-import "movie-api/server"
+import (
+	"movie-api/server"
+	"movie-api/server/routes"
+)
 
 func main() {
-	s := server.Server{}
-	s.InitialiseDB("./database.db")
-	s.ConfigCors()
-	s.InitialiseRoutes()
-
+	s := server.NewServer("./database.db")
+	routes.InitialiseRoutes(s)
+	s.Start()
 }
