@@ -3,7 +3,6 @@ package server
 import (
 	"fmt"
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"movie-api/handlers"
@@ -18,6 +17,14 @@ type Server struct {
 	E          *echo.Echo
 	MovieRepo  repos.MovieRepo
 	ReviewRepo repos.ReviewRepo
+}
+
+func MigrateDB[T any](database *gorm.DB, model T) {
+	err := database.AutoMigrate(model)
+	if err != nil {
+		fmt.Errorf("failed to migrate")
+	}
+
 }
 
 func (server *Server) InitialiseDB(path string) {
@@ -38,18 +45,6 @@ func (server *Server) CloseDB() {
 		return
 	}
 	db.Close()
-
-}
-
-func (server *Server) ConfigCors() {
-	server.E.Use(middleware.Logger())
-	server.E.Use(middleware.Recover())
-
-	server.E.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins: []string{"http://localhost:3000"},
-		AllowMethods: []string{echo.GET, echo.PUT, echo.POST, echo.DELETE, echo.OPTIONS},
-		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept},
-	}))
 
 }
 
