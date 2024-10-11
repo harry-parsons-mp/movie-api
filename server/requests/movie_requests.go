@@ -1,6 +1,11 @@
 package requests
 
 type MovieRequest struct {
+	ImageURL string           `json:"image_url"`
+	Data     MovieRequestData `json:"data"`
+}
+
+type MovieRequestData struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	Genre       string `json:"genre"`

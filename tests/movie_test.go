@@ -115,9 +115,11 @@ func TestMovieCreate(t *testing.T) {
 	newMovie := &models.Movie{}
 	factories.MovieFactory(ts.S.Db, newMovie)
 	movieRequest := requests.MovieRequest{
-		Name:        newMovie.Name,
-		Description: newMovie.Description,
-		Genre:       newMovie.Genre,
+		Data: requests.MovieRequestData{
+			Name:        newMovie.Name,
+			Description: newMovie.Description,
+			Genre:       newMovie.Genre,
+		},
 	}
 	tests := []TestCase{
 		{
@@ -197,9 +199,11 @@ func TestMovieUpdate(t *testing.T) {
 				Url:    "/movies/9999",
 			},
 			RequestBody: requests.MovieRequest{
-				Name:        "Updated Title",
-				Description: "Updated Desc",
-				Genre:       "Updated Genre",
+				Data: requests.MovieRequestData{
+					Name:        "Updated Title",
+					Description: "Updated Desc",
+					Genre:       "Updated Genre",
+				},
 			},
 			Expected: ExpectedResponse{
 				StatusCode: http.StatusNotFound,
@@ -213,9 +217,11 @@ func TestMovieUpdate(t *testing.T) {
 				Url:    "/movies/invalid-id",
 			},
 			RequestBody: requests.MovieRequest{
-				Name:        "Updated Title",
-				Description: "Updated Desc",
-				Genre:       "Updated Genre",
+				Data: requests.MovieRequestData{
+					Name:        "Updated Title",
+					Description: "Updated Desc",
+					Genre:       "Updated Genre",
+				},
 			},
 			Expected: ExpectedResponse{
 				StatusCode: http.StatusNotFound,
@@ -226,9 +232,11 @@ func TestMovieUpdate(t *testing.T) {
 			TestName: "Can update movie",
 			Request:  request,
 			RequestBody: requests.MovieRequest{
-				Name:        "Updated Title",
-				Description: "Updated Desc",
-				Genre:       "Updated Genre",
+				Data: requests.MovieRequestData{
+					Name:        "Updated Title",
+					Description: "Updated Desc",
+					Genre:       "Updated Genre",
+				},
 			},
 			Expected: ExpectedResponse{
 				StatusCode: http.StatusOK,

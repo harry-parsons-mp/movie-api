@@ -3,6 +3,7 @@ package server
 import (
 	"fmt"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"log"
@@ -20,6 +21,7 @@ type Server struct {
 func NewServer(path string) *Server {
 	s := Server{}
 	s.InitialiseDB(path)
+	s.ConfigCors()
 	s.Repos = repos.NewRepos(s.Db)
 	return &s
 }
@@ -49,5 +51,14 @@ func (server *Server) Start() {
 func (server *Server) DeleteDB(path string) {
 	log.Println("Deleting db...")
 	os.Remove(path)
+
+}
+func (server *Server) ConfigCors() {
+
+	server.Echo.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins: []string{"http://localhost:3000"},
+		AllowMethods: []string{echo.GET, echo.PUT, echo.POST, echo.DELETE, echo.OPTIONS},
+		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept},
+	}))
 
 }

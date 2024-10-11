@@ -5,6 +5,7 @@ type Movie struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	Genre       string `json:"genre"`
+	ImageURL    string `json:"image_url"`
 
 	Reviews []Review
 }

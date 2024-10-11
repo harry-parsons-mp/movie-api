@@ -41,4 +41,6 @@ func InitialiseRoutes(server *server.Server) {
 	server.Echo.PUT(userPath+"/:id", userHandler.Update)
 	server.Echo.DELETE(userPath+"/:id", userHandler.Delete)
 
+	// serving images
+	server.Echo.Static("/images", "images")
 }

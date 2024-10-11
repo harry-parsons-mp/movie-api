@@ -9,6 +9,7 @@ type MovieResponse struct {
 	Name        string           `json:"name"`
 	Description string           `json:"description"`
 	Genre       string           `json:"genre"`
+	ImageURL    string           `json:"image_url"`
 	Review      []ReviewResponse `json:"reviews"`
 }
 
@@ -27,6 +28,7 @@ func NewMovieResponse(movie *models.Movie) *MovieResponse {
 		Name:        movie.Name,
 		Description: movie.Description,
 		Genre:       movie.Genre,
+		ImageURL:    movie.ImageURL,
 	}
 	if movie.Reviews != nil {
 		res.Review = NewReviewsResponse(movie.Reviews)
