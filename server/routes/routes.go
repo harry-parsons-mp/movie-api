@@ -26,6 +26,7 @@ func InitialiseRoutes(server *server.Server) {
 	server.Echo.POST(moviePath, movieHandler.Create)
 	server.Echo.PUT(moviePath+"/:id", movieHandler.Update)
 	server.Echo.DELETE(moviePath+"/:id", movieHandler.Delete)
+	server.Echo.POST("/image", movieHandler.ImageUpload)
 
 	// Reviews
 	server.Echo.GET(reviewPath, reviewHandler.List)
@@ -41,6 +42,8 @@ func InitialiseRoutes(server *server.Server) {
 	server.Echo.PUT(userPath+"/:id", userHandler.Update)
 	server.Echo.DELETE(userPath+"/:id", userHandler.Delete)
 
+	//auth
+	server.Echo.POST("/auth", userHandler.Auth)
 	// serving images
 	server.Echo.Static("/images", "images")
 }

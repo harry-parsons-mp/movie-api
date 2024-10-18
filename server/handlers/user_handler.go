@@ -79,7 +79,6 @@ func (h *UserHandler) Update(c echo.Context) error {
 	if user.ID == 0 {
 		return c.JSON(http.StatusNotFound, fmt.Sprintf("Failed to find user with id:%s", ID))
 	}
-
 	// Update the user
 	user.Name = updateRequest.Name
 	user.Username = updateRequest.Username
@@ -111,4 +110,21 @@ func (h *UserHandler) Delete(c echo.Context) error {
 	//response
 	res := fmt.Sprintf("User of id: %v deleted sucessfully", id)
 	return c.JSON(http.StatusOK, res)
+}
+
+func (h *UserHandler) Auth(c echo.Context) error {
+	authReq := requests.AuthRequest{}
+	user := models.User{}
+
+	if err := c.Bind(&authReq); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+	h.server.Repos.User.Auth(authReq.Username, &user)
+
+	if user.ID == 0 {
+		return echo.NewHTTPError(http.StatusNotFound, "User not found")
+	}
+
+	return c.JSON(http.StatusOK, user)
+
 }

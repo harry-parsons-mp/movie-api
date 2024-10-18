@@ -20,3 +20,7 @@ func (u *UserRepo) List(obj *[]models.User) {
 func (u *UserRepo) Get(id interface{}, obj *models.User) {
 	u.Db.Preload("Reviews").Where("id = ?", id).Find(obj)
 }
+
+func (u *UserRepo) Auth(username interface{}, obj *models.User) {
+	u.Db.Where("username = ?", username).Find(obj)
+}
